@@ -1,0 +1,5 @@
+{
+  "name": "Fuel & Conquer Meal Architect Flash",
+  "description": "A nutrition app that takes user inputs to design a realistic, low-carb, high-protein meal plan, including daily targets, a 7-day meal plan, and a grocery list, with an option to include family members.",
+  "requestFramePermissions": []
+}
