@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import logo from "@/assets/images/rewire-logo-conquer.png"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -34,8 +34,28 @@ export function ResetPasswordForm({
     setMessage(null)
 
     try {
-      await sendPasswordResetEmail(auth, email)
-      setMessage("Password reset link sent. Check your email.")
+      // await sendPasswordResetEmail(auth, email)
+
+
+      const data = { email };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_BASED_URL}/forgot-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to send reset link");
+      }
+
+      console.log("Success:", result);
+      setMessage("Password reset link sent. Check your email.");
     } catch (err: any) {
       let msg = "Something went wrong. Please try again."
 
@@ -68,7 +88,7 @@ export function ResetPasswordForm({
           />
 
           <CardTitle className="text-2xl font-semibold text-green-700">
-          Forgot Password
+            Forgot Password
           </CardTitle>
 
           <CardDescription className="text-sm text-muted-foreground">

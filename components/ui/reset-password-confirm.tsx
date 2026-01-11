@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 import logo from "@/assets/images/rewire-logo-conquer.png"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
 import {
@@ -19,14 +19,15 @@ import { Input } from "@/components/ui/input"
 import { useSearchParams, Link, useNavigate, useParams } from "react-router-dom"
 import { confirmPasswordReset } from "firebase/auth"
 import { useAuth } from "../../auth/Authprovider"
+import { auth } from "@/config/firebase"
 
 export function ResetPasswordConfirm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const {code} = useParams();
+  const { code } = useParams();
   const navigate = useNavigate()
-  const { auth } = useAuth()
+  const { user } = useAuth()
 
 
   const [password, setPassword] = useState("")
@@ -76,6 +77,8 @@ export function ResetPasswordConfirm({
         msg = "Password is too weak."
       }
 
+      console.log("Error:", err);
+
       setError(msg)
     } finally {
       setLoading(false)
@@ -99,7 +102,7 @@ export function ResetPasswordConfirm({
           />
 
           <CardTitle className="text-2xl font-semibold text-green-700 py-6">
-           Reset Password
+            Reset Password
           </CardTitle>
 
           {/* <CardDescription className="text-sm text-muted-foreground">
