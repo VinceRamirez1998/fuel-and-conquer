@@ -11,7 +11,8 @@ import {
 import { LoginForm } from "./components/login-form";
 import App from "./App";
 import { useAuth } from "./auth/Authprovider";
-
+import { ResetPasswordForm } from "@/components/ui/reset-password"
+import { ResetPasswordConfirm } from "@/components/ui/reset-password-confirm"
 export const AppRoutes = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,8 +36,9 @@ export const AppRoutes = () => {
       <Route path="/" element={<LoginForm />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<App />} />
-        
       </Route>
+      <Route path="/forgot-password" element={<ResetPasswordForm />} />
+      <Route path="/reset-password/:code" element={<ResetPasswordConfirm />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
