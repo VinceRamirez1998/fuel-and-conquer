@@ -1,392 +1,277 @@
-import React from 'react';
-import type { MealPlanResponse } from '../types';
+
+import React, { useState } from 'react';
+import type { MealPlanResponse, Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface MealPlanDisplayProps {
     plan: MealPlanResponse;
     onReset: () => void;
+    language: Language;
 }
 
-const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ plan, onReset }) => {
-    const handleExportHtml = () => {
-        const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fuel & Conquer Meal Plan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @media print {
-            .no-print { display: none; }
-            body { background: white; }
-        }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800 p-8">
-    <div class="max-w-5xl mx-auto space-y-8 bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-        <header class="flex items-center justify-between border-b pb-6">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-black border-2 border-lime-400 rounded-lg flex items-center justify-center overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=100&h=100" alt="F&C Logo" class="w-full h-full object-cover opacity-80" />
-                </div>
-                <div>
-                    <h1 class="text-2xl font-black italic uppercase tracking-tighter leading-none">Fuel & <span class="text-lime-500">Conquer</span></h1>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Meal Architect Plan</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">${new Date().toLocaleDateString()}</p>
-            </div>
-        </header>
+const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ plan, onReset, language }) => {
+    const t = TRANSLATIONS[language];
+    const [isCopied, setIsCopied] = useState(false);
 
-        <div class="p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 rounded-r-lg text-sm">
-            <h3 class="font-bold mb-1">Important Disclaimer</h3>
-            <p>${plan.disclaimer}</p>
+    const handleCopyPlan = async () => {
+        // Color Palette & Constants for Inline Styles (Optimized for Email Clients)
+        const c = {
+            bgBody: '#f1f5f9',
+            textMain: '#1e293b',
+            textLight: '#475569',
+            textMuted: '#64748b',
+            border: '#e2e8f0',
+            tealDark: '#134e4a',
+            tealBg: '#f0fdfa',
+            tealText: '#0f766e',
+            skyDark: '#0c4a6e',
+            skyBg: '#f0f9ff',
+            amberDark: '#78350f',
+            amberBg: '#fffbeb',
+            limeAccent: '#84cc16',
+            yellowBg: '#fefce8',
+            yellowBorder: '#eab308',
+            yellowText: '#854d0e',
+            black: '#000000',
+        };
+
+        const dateStr = new Date().toLocaleDateString(language === 'es' ? 'es-US' : 'en-US');
+
+        // 1. Construct HTML Representation (Rich Text for Email Body)
+        // Note: We strip the <html>/<body> tags for clipboard pasting to ensure it flows into the email body correctly.
+        const htmlContent = `
+<div style="font-family: Helvetica, Arial, sans-serif; color: ${c.textMain}; background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid ${c.border}; max-width: 600px;">
+    
+    <!-- HEADER -->
+    <div style="border-bottom: 2px solid ${c.limeAccent}; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 900; font-style: italic; text-transform: uppercase; color: #0f172a;">
+            Fuel & <span style="color: ${c.limeAccent};">Conquer</span>
+        </h1>
+        <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">
+            ${t.headers.generatedOn} ${dateStr}
+        </p>
+    </div>
+
+    <!-- DISCLAIMER -->
+    <div style="background-color: ${c.yellowBg}; border-left: 4px solid ${c.yellowBorder}; padding: 12px; margin-bottom: 24px;">
+        <p style="margin: 0; font-size: 13px; color: ${c.yellowText}; font-weight: bold;">${t.headers.disclaimer}</p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: ${c.yellowText};">${plan.disclaimer}</p>
+    </div>
+
+    <!-- DAILY BLUEPRINT -->
+    <div style="margin-bottom: 32px;">
+        <h2 style="font-size: 20px; font-weight: bold; color: ${c.textMain}; border-bottom: 1px solid ${c.border}; padding-bottom: 8px; margin-bottom: 16px;">${t.headers.dailyBlueprint}</h2>
+        
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 16px;">
+            <tr>
+                <td width="32%" valign="top" style="background-color: ${c.tealBg}; padding: 12px; border-radius: 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 600; color: ${c.tealText};">${t.headers.dailyCalories}</p>
+                    <p style="margin: 4px 0; font-size: 24px; font-weight: bold; color: ${c.tealDark};">${plan.daily_targets.calories.toLocaleString()}</p>
+                    <p style="margin: 0; font-size: 11px; color: ${c.tealDark};">kcal</p>
+                </td>
+                <td width="2%"></td>
+                <td width="32%" valign="top" style="background-color: ${c.skyBg}; padding: 12px; border-radius: 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 600; color: #0369a1;">${t.headers.proteinGoal}</p>
+                    <p style="margin: 4px 0; font-size: 24px; font-weight: bold; color: ${c.skyDark};">${plan.daily_targets.protein_goal}</p>
+                    <p style="margin: 0; font-size: 11px; color: ${c.skyDark};">grams</p>
+                </td>
+                <td width="2%"></td>
+                <td width="32%" valign="top" style="background-color: ${c.amberBg}; padding: 12px; border-radius: 8px; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 600; color: #b45309;">${t.headers.carbLimit}</p>
+                    <p style="margin: 4px 0; font-size: 24px; font-weight: bold; color: ${c.amberDark};">&lt; ${plan.daily_targets.carb_limit}</p>
+                    <p style="margin: 0; font-size: 11px; color: ${c.amberDark};">grams</p>
+                </td>
+            </tr>
+        </table>
+
+        <div style="background-color: #f8fafc; padding: 12px; border-radius: 6px; font-size: 14px; color: ${c.textLight}; line-height: 1.5;">
+            <strong style="color: ${c.textMain};">${t.headers.twoNumbersPhilosophy}</strong> ${plan.daily_targets.explanation}
         </div>
 
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Daily Blueprint</h2>
-            <div class="grid grid-cols-3 gap-4 text-center">
-                <div class="p-4 bg-teal-50 rounded-lg">
-                    <p class="text-xs font-semibold text-teal-700 uppercase">Calories</p>
-                    <p class="text-2xl font-bold text-teal-900">${plan.daily_targets.calories.toLocaleString()}</p>
-                </div>
-                <div class="p-4 bg-sky-50 rounded-lg">
-                    <p class="text-xs font-semibold text-sky-700 uppercase">Protein</p>
-                    <p class="text-2xl font-bold text-sky-900">${plan.daily_targets.protein_goal}g</p>
-                </div>
-                <div class="p-4 bg-amber-50 rounded-lg">
-                    <p class="text-xs font-semibold text-amber-700 uppercase">Carb Limit</p>
-                    <p class="text-2xl font-bold text-amber-900">&lt; ${plan.daily_targets.carb_limit}g</p>
-                </div>
-            </div>
-            <div class="mt-4 p-4 bg-slate-50 rounded-lg italic text-sm text-slate-600">
-                ${plan.daily_targets.explanation}
-            </div>
-        </section>
+        <div style="margin-top: 16px; text-align: center;">
+             <p style="font-size: 16px; margin: 0; color: ${c.textMain};">
+                <strong style="color: ${c.textLight};">${t.headers.estimatedGoalDate}</strong> <span style="color: ${c.tealText}; font-weight: bold;">${plan.goal_timeline.estimated_goal_date}</span>
+            </p>
+        </div>
+    </div>
 
-        ${plan.goal_timeline ? `
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Goal Timeline</h2>
-            <p class="font-semibold text-slate-700">Estimated Goal Date: <span class="text-teal-600">${plan.goal_timeline.estimated_goal_date}</span></p>
-            <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-left text-sm border-collapse">
-                    <thead class="bg-slate-100 text-slate-600">
+    <!-- MEAL PLAN -->
+    <div>
+        <h2 style="font-size: 20px; font-weight: bold; color: ${c.textMain}; border-bottom: 1px solid ${c.border}; padding-bottom: 8px; margin-bottom: 20px;">${t.headers.threeDayPlan}</h2>
+        
+        ${plan.three_day_plan.map((day, i) => `
+            <div style="${i !== 0 ? `border-top: 1px solid ${c.border}; padding-top: 20px; margin-top: 20px;` : ''}">
+                <h3 style="font-size: 16px; font-weight: bold; color: ${c.textMain}; margin: 0 0 12px 0;">${day.day}</h3>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    ${day.meals.map(meal => `
                         <tr>
-                            <th class="p-2 border font-semibold">Date</th>
-                            <th class="p-2 border font-semibold">Est. Weight</th>
-                            <th class="p-2 border font-semibold">Progress Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${plan.goal_timeline.progress_timeline.map(m => `
-                            <tr>
-                                <td class="p-2 border text-slate-800 font-medium">${m.date}</td>
-                                <td class="p-2 border text-slate-600">${m.estimated_weight}</td>
-                                <td class="p-2 border text-slate-600">${m.progress_note}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </section>` : ''}
-
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Meal Structure</h2>
-            <p class="text-sm mb-4"><strong class="text-slate-700">Fasting Window:</strong> ${plan.meal_structure.fasting_window}</p>
-            <div class="space-y-2">
-                ${plan.meal_structure.meals.map(m => `
-                    <div class="flex justify-between border-b border-slate-100 py-1 text-sm">
-                        <span class="font-bold">${m.name}</span>
-                        <span>${m.protein}g P | ${m.carbs}g C | ${m.calories} kcal</span>
-                    </div>
-                `).join('')}
-            </div>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">7-Day Plan</h2>
-            <div class="space-y-6">
-                ${plan.seven_day_plan.map(day => `
-                    <div class="border-t pt-4">
-                        <h3 class="font-bold text-slate-700 mb-2 uppercase tracking-wide">${day.day}</h3>
-                        <div class="grid gap-4">
-                            ${day.meals.map(meal => `
-                                <div class="p-3 bg-slate-50 rounded border border-slate-100">
-                                    <p class="font-bold text-slate-800 text-sm">${meal.name}</p>
-                                    <p class="text-xs text-slate-600 my-1">${meal.description}</p>
-                                    <p class="text-[10px] text-slate-400 font-bold uppercase mt-2">Prep Total: ${meal.combined_recipe}</p>
+                            <td style="padding-bottom: 12px;">
+                                <div style="background-color: #f8fafc; padding: 12px; border-radius: 6px;">
+                                    <p style="margin: 0 0 4px 0; font-size: 15px; font-weight: 600; color: ${c.textMain};">${meal.name}</p>
+                                    <p style="margin: 0 0 8px 0; font-size: 13px; color: ${c.textLight}; line-height: 1.4;">${meal.description}</p>
+                                    <p style="margin: 0; font-size: 11px; color: ${c.textMuted};">~${meal.protein}g P | ~${meal.carbs}g C | ~${meal.calories} kcal</p>
                                 </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        </section>
-
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Grocery List</h2>
-            <div class="grid grid-cols-2 gap-8">
-                ${plan.grocery_list.map(cat => `
-                    <div>
-                        <h3 class="font-bold text-teal-700 text-sm mb-2 uppercase">${cat.category}</h3>
-                        <ul class="text-xs space-y-1">
-                            ${cat.items.map(i => `
-                                <li class="flex justify-between border-b border-slate-50 py-1">
-                                    <span>${i.item}</span>
-                                    <span class="font-bold text-slate-800">${i.quantity}</span>
-                                </li>
-                            `).join('')}
-                        </ul>
-                    </div>
-                `).join('')}
-            </div>
-        </section>
-
-        ${plan.family_summary && plan.family_summary.length > 0 ? `
-        <section>
-            <h2 class="text-xl font-bold text-slate-800 border-b pb-2 mb-4">Family Summary</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead class="bg-slate-100">
-                        <tr>
-                            <th class="p-2 border">Name</th>
-                            <th class="p-2 border">Goal</th>
-                            <th class="p-2 border">Cals</th>
-                            <th class="p-2 border">Protein</th>
-                            <th class="p-2 border">Carbs</th>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        ${plan.family_summary.map(f => `
-                            <tr>
-                                <td class="p-2 border font-bold">${f.name}</td>
-                                <td class="p-2 border">${f.goal}</td>
-                                <td class="p-2 border">${f.calories}</td>
-                                <td class="p-2 border">${f.protein}g</td>
-                                <td class="p-2 border">&lt; ${f.carb_limit}g</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+                    `).join('')}
                 </table>
             </div>
-        </section>` : ''}
-
-        <footer class="mt-8 pt-8 border-t text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            Fuel & Conquer Meal Architect | Generated by AI
-        </footer>
+        `).join('')}
     </div>
-    <div class="fixed bottom-8 right-8 no-print">
-        <button onclick="window.print()" class="bg-slate-900 text-white px-6 py-3 rounded-full font-bold shadow-2xl hover:scale-105 transition-transform">Print to PDF</button>
-    </div>
-</body>
-</html>`;
+</div>
+`;
 
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'Fuel_and_Conquer_Meal_Plan.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // 2. Construct Plain Text Representation (Fallback)
+        const textContent = `
+FUEL & CONQUER MEAL PLAN
+Generated on: ${dateStr}
+
+DAILY TARGETS
+-------------
+Calories: ${plan.daily_targets.calories}
+Protein: ${plan.daily_targets.protein_goal}g
+Carb Limit: < ${plan.daily_targets.carb_limit}g
+
+GOAL ESTIMATE
+-------------
+Estimated Date: ${plan.goal_timeline.estimated_goal_date}
+
+${plan.three_day_plan.map(day => `
+${day.day.toUpperCase()}
+${day.meals.map(meal => `
+* ${meal.name}
+  ${meal.description}
+  (Protein: ${meal.protein}g | Carbs: ${meal.carbs}g | Calories: ${meal.calories})
+`).join('')}
+`).join('\n')}
+
+DISCLAIMER
+----------
+${plan.disclaimer}
+`.trim();
+
+        // 3. Execute Clipboard Write
+        try {
+            const blobHtml = new Blob([htmlContent], { type: 'text/html' });
+            const blobText = new Blob([textContent], { type: 'text/plain' });
+            
+            const data = [new ClipboardItem({ 
+                ['text/html']: blobHtml,
+                ['text/plain']: blobText
+            })];
+            
+            await navigator.clipboard.write(data);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2500);
+        } catch (err) {
+            console.error('Failed to copy to clipboard', err);
+            // Fallback for some browsers or insecure contexts if needed, though rare in modern apps
+            alert("Unable to copy to clipboard automatically. Please try selecting the text manually.");
+        }
     };
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in relative max-w-4xl mx-auto">
             {/* Disclaimer */}
             <div className="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-r-lg">
-                <h3 className="font-bold">Important Disclaimer</h3>
+                <h3 className="font-bold">{t.headers.disclaimer}</h3>
                 <p className="text-sm">{plan.disclaimer}</p>
             </div>
 
             {/* Header Actions */}
-            <div className="flex justify-end gap-3 no-print">
+            <div className="flex flex-col items-end gap-2 no-print">
                  <button 
-                    onClick={handleExportHtml}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg shadow-sm hover:bg-slate-50 transition-colors focus:outline-none"
+                    onClick={handleCopyPlan}
+                    disabled={isCopied}
+                    className={`flex items-center gap-2 px-4 py-2 border font-bold rounded-lg shadow-sm transition-all focus:outline-none ${
+                        isCopied 
+                        ? 'bg-teal-50 border-teal-200 text-teal-700' 
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-lime-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="Vertical 4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Export as HTML
-                </button>
-            </div>
-
-            {/* Main Plan & Grocery List */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Daily Targets */}
-                    <div className="p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Your Daily Blueprint</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                            <div className="p-4 bg-teal-50 rounded-lg">
-                                <p className="text-sm font-semibold text-teal-700">Daily Calories</p>
-                                <p className="text-3xl font-bold text-teal-900">{plan.daily_targets.calories.toLocaleString()}</p>
-                                <p className="text-sm text-teal-800">kcal</p>
-                            </div>
-                            <div className="p-4 bg-sky-50 rounded-lg">
-                                <p className="text-sm font-semibold text-sky-700">Protein Goal</p>
-                                <p className="text-3xl font-bold text-sky-900">{plan.daily_targets.protein_goal}</p>
-                                <p className="text-sm text-sky-800">grams/day</p>
-                            </div>
-                            <div className="p-4 bg-amber-50 rounded-lg">
-                                <p className="text-sm font-semibold text-amber-700">Carb Limit</p>
-                                <p className="text-3xl font-bold text-amber-900">&lt; {plan.daily_targets.carb_limit}</p>
-                                <p className="text-sm text-amber-800">grams/day</p>
-                            </div>
-                        </div>
-                        <div className="mt-6 p-4 bg-slate-100 rounded-md">
-                            <p className="text-slate-700 font-semibold mb-2">The "Two Numbers That Matter™" Philosophy:</p>
-                            <p className="text-slate-600 text-sm">{plan.daily_targets.explanation} We only track Protein and Carbs. Hit your protein goal, stay under your carb limit, and let your body handle the rest.</p>
-                        </div>
-                    </div>
-
-                    {/* Goal Timeline */}
-                    {plan.goal_timeline && (
-                         <div className="p-6 bg-white rounded-lg shadow-lg">
-                            <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Your Estimated Timeline</h2>
-                            <div>
-                                <p className="font-semibold text-slate-700">Estimated Goal Date: <span className="font-bold text-teal-600">{plan.goal_timeline.estimated_goal_date}</span></p>
-                                <p className="text-xs text-slate-500 mt-1 italic">These are projected dates and weights based on your plan’s pace and consistent adherence. Actual results may vary.</p>
-                            </div>
-                            <details className="mt-4 group">
-                                <summary className="font-semibold text-slate-700 cursor-pointer list-none flex items-center">
-                                    <span className="transition-transform duration-200 group-open:rotate-90">▸</span>
-                                    <span className="ml-2">View Progress Timeline</span>
-                                </summary>
-                                <div className="mt-4 pl-4 border-l-2 border-slate-200">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="bg-slate-50 text-slate-600">
-                                                <tr>
-                                                    <th className="p-2 font-semibold">Date</th>
-                                                    <th className="p-2 font-semibold">Est. Weight</th>
-                                                    <th className="p-2 font-semibold">Progress Note</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {plan.goal_timeline.progress_timeline.map(milestone => (
-                                                    <tr key={milestone.date} className="border-b border-slate-100 last:border-0">
-                                                        <td className="p-2 font-medium text-slate-800">{milestone.date}</td>
-                                                        <td className="p-2 text-slate-600">{milestone.estimated_weight}</td>
-                                                        <td className="p-2 text-slate-600">{milestone.progress_note}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-3 italic">All timelines and milestones are estimated projections based on your current plan and consistent adherence. Results may vary due to individual factors.</p>
-                                </div>
-                            </details>
-                         </div>
+                    {isCopied ? (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                            Copied!
+                        </>
+                    ) : (
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            {t.headers.exportHtml}
+                        </>
                     )}
-                    
-                     {/* Meal Structure */}
-                    <div className="p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Fasting & Meal Structure</h2>
-                        <p><strong className="text-slate-700">Fasting Window:</strong> <span className="text-teal-600 font-semibold">{plan.meal_structure.fasting_window}</span></p>
-                        <p className="mt-2 text-slate-600">{plan.meal_structure.schedule_description}</p>
-                        <div className="mt-4 space-y-2 divide-y divide-slate-100">
-                            {plan.meal_structure.meals.map((meal, index) => (
-                                <div key={index} className="flex justify-between items-baseline pt-2 first:pt-0">
-                                    <span className="font-semibold text-slate-800">{meal.name}</span>
-                                    <span className="text-sm text-slate-600 text-right">
-                                        {Math.round(meal.protein)}g Protein, {Math.round(meal.carbs)}g Carbs &ndash; ~{Math.round(meal.calories).toLocaleString()} calories
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* 7-Day Plan */}
-                    <div className="p-6 bg-white rounded-lg shadow-lg">
-                        <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Your 7-Day Meal Plan</h2>
-                        <div className="space-y-6">
-                            {plan.seven_day_plan.map(day => (
-                                <div key={day.day} className="border-t pt-4">
-                                    <h3 className="font-bold text-lg text-slate-700">{day.day}</h3>
-                                    <div className="mt-2 space-y-4 pl-4">
-                                        {day.meals.map(meal => (
-                                            <div key={meal.name} className="p-3 bg-slate-50 rounded-md">
-                                                <p className="font-semibold text-slate-800">{meal.name}</p>
-                                                <p className="text-sm text-slate-600 mt-1">{meal.description}</p>
-                                                <p className="text-sm text-slate-800 mt-2"><strong className="font-semibold">Total for Meal Prep:</strong> {meal.combined_recipe}</p>
-                                                <p className="text-xs text-slate-500 mt-2">~{meal.protein}g Protein | ~{meal.carbs}g Carbs per serving</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Grocery List */}
-                <div className="lg:col-span-1 space-y-8">
-                     <div className="p-6 bg-white rounded-lg shadow-lg sticky top-8">
-                         <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Weekly Grocery List</h2>
-                         <div className="space-y-4 max-h-[80vh] overflow-y-auto">
-                            {plan.grocery_list.map((groceryCategory) => (
-                                <div key={groceryCategory.category}>
-                                    <h3 className="font-semibold text-teal-700 text-lg">{groceryCategory.category}</h3>
-                                    <ul className="mt-2 space-y-1 text-slate-600 text-sm">
-                                        {groceryCategory.items.map((item, index) => (
-                                            <li key={index} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-b-0">
-                                                <span>{item.item}</span>
-                                                <span className="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-xs">{item.quantity}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                     </div>
-                </div>
+                </button>
+                <p className="text-xs text-slate-500 text-right max-w-xs whitespace-pre-line">
+                    {t.headers.copyButtonInstruction}
+                </p>
             </div>
 
-            {/* Family Summary */}
-            {plan.family_summary && plan.family_summary.length > 0 && (
-                <div className="p-6 bg-white rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">Family Summary</h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-100 text-sm text-slate-600">
-                                <tr>
-                                    <th className="p-3 font-semibold">Name</th>
-                                    <th className="p-3 font-semibold">Goal</th>
-                                    <th className="p-3 font-semibold">Calories</th>
-                                    <th className="p-3 font-semibold">Protein (g)</th>
-                                    <th className="p-3 font-semibold">Carb Limit (g)</th>
-                                    <th className="p-3 font-semibold">Fasting</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {plan.family_summary.map(member => (
-                                    <tr key={member.name} className="border-b">
-                                        <td className="p-3 font-medium text-slate-800">{member.name}</td>
-                                        <td className="p-3 text-slate-600">{member.goal}</td>
-                                        <td className="p-3 text-slate-600">{member.calories.toLocaleString()}</td>
-                                        <td className="p-3 text-slate-600">{member.protein}</td>
-                                        <td className="p-3 text-slate-600">&lt; {member.carb_limit}</td>
-                                        <td className="p-3 text-slate-600">{member.fasting}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            {/* Daily Targets & Blueprint */}
+            <div className="p-6 bg-white rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">{t.headers.dailyBlueprint}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div className="p-4 bg-teal-50 rounded-lg">
+                        <p className="text-sm font-semibold text-teal-700">{t.headers.dailyCalories}</p>
+                        <p className="text-3xl font-bold text-teal-900">{plan.daily_targets.calories.toLocaleString()}</p>
+                        <p className="text-sm text-teal-800">kcal</p>
+                    </div>
+                    <div className="p-4 bg-sky-50 rounded-lg">
+                        <p className="text-sm font-semibold text-sky-700">{t.headers.proteinGoal}</p>
+                        <p className="text-3xl font-bold text-sky-900">{plan.daily_targets.protein_goal}</p>
+                        <p className="text-sm text-sky-800">grams/day</p>
+                    </div>
+                    <div className="p-4 bg-amber-50 rounded-lg">
+                        <p className="text-sm font-semibold text-amber-700">{t.headers.carbLimit}</p>
+                        <p className="text-3xl font-bold text-amber-900">&lt; {plan.daily_targets.carb_limit}</p>
+                        <p className="text-sm text-amber-800">grams/day</p>
                     </div>
                 </div>
-            )}
+                <div className="mt-6 p-4 bg-slate-100 rounded-md">
+                    <p className="text-slate-700 font-semibold mb-2">{t.headers.twoNumbersPhilosophy}</p>
+                    <p className="text-slate-600 text-sm">{plan.daily_targets.explanation}</p>
+                </div>
+
+                {/* Estimated Goal Date - Moved here */}
+                {plan.goal_timeline && (
+                    <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+                        <p className="font-semibold text-slate-700 text-lg">
+                            {t.headers.estimatedGoalDate} <span className="font-bold text-teal-600">{plan.goal_timeline.estimated_goal_date}</span>
+                        </p>
+                    </div>
+                )}
+            </div>
+            
+            {/* 3-Day Plan */}
+            <div className="p-6 bg-white rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold text-slate-800 border-b pb-3 mb-4">{t.headers.threeDayPlan}</h2>
+                <div className="space-y-6">
+                    {plan.three_day_plan.map(day => (
+                        <div key={day.day} className="border-t pt-4 first:border-t-0 first:pt-0">
+                            <h3 className="font-bold text-lg text-slate-700">{day.day}</h3>
+                            <div className="mt-2 space-y-4 pl-4">
+                                {day.meals.map(meal => (
+                                    <div key={meal.name} className="p-3 bg-slate-50 rounded-md">
+                                        <p className="font-semibold text-slate-800">{meal.name}</p>
+                                        <p className="text-sm text-slate-600 mt-1">{meal.description}</p>
+                                        <p className="text-xs text-slate-500 mt-2">~{meal.protein}g Protein | ~{meal.carbs}g Carbs | ~{meal.calories} kcal</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
             
             <div className="text-center pt-8">
                  <button 
                     onClick={onReset}
                     className="px-8 py-3 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
                 >
-                    Create a New Plan
+                    {t.headers.createOldPlan}
                 </button>
             </div>
         </div>
